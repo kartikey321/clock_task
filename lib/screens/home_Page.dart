@@ -12,27 +12,51 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currIndex = 0;
-  bool isSwitched = false;
+  bool isSwitched = true;
   var text = 'Sound On';
-  void toggleSwitch(bool value) {
-    if (isSwitched == false) {
-      setState(() {
-        isSwitched = true;
-        text = 'Sound On';
-      });
-      print('Switch Button is ON');
-    } else {
-      setState(() {
-        isSwitched = false;
-        text = 'Sound Off';
-      });
-      print('Switch Button is OFF');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     var provider = Provider.of<AppData>(context);
+    String bigText = '';
+    String subText = '';
+    Duration d = Duration();
+    void toggleSwitch(bool value) {
+      if (isSwitched == false) {
+        Future.delayed(Duration.zero, () {
+          provider.setSoundStatus = Soundstatus.on;
+          setState(() {
+            isSwitched = true;
+            text = 'Sound On';
+          });
+          print('Switch Button is ON');
+        });
+      } else {
+        Future.delayed(Duration.zero, () {
+          provider.setSoundStatus = Soundstatus.off;
+          setState(() {
+            isSwitched = false;
+            text = 'Sound Off';
+          });
+          print('Switch Button is OFF');
+        });
+      }
+    }
+
+    if (_currIndex == 0) {
+      bigText = 'Nom Nom:)';
+      subText =
+          'You have 10 minutes to eat before the pause. Focus on eating slowly';
+      d = Duration(seconds: 600);
+    } else if (_currIndex == 1) {
+      bigText = 'Break Time';
+      subText = 'Take a five minute break to check on your level of fullness';
+      d = Duration(seconds: 300);
+    } else {
+      bigText = 'Finish your meal';
+      subText = 'You can eat your meal until full';
+      d = Duration(seconds: 30);
+    }
     return Scaffold(
       backgroundColor: Colors.black45,
       appBar: AppBar(
@@ -44,106 +68,137 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(11),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              children: _buildPageIndicator(3),
-            ),
-            MyCircularProgressClock(
-              remainingTime: const Duration(minutes: 5),
-              onPause: () {
-                print('Timer paused!');
-              },
-            ),
-            SizedBox(height: 30),
-            Switch(
-              onChanged: toggleSwitch,
-              value: isSwitched,
-              activeColor: Colors.greenAccent,
-              thumbColor: MaterialStateProperty.resolveWith<Color>(
-                (Set<MaterialState> states) {
-                  if (states.contains(MaterialState.disabled)) {
-                    return Colors.greenAccent;
-                  }
-                  return Colors.white;
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _buildPageIndicator(3),
+              ),
+              SizedBox(
+                height: 15,
+              ),
+              Text(
+                bigText,
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w600),
+              ),
+              Text(
+                subText,
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+              MyCircularProgressClock(
+                remainingTime: d,
+                onPause: () {
+                  print('Timer paused!');
                 },
               ),
-            ),
-            Text(
-              text,
-              style: TextStyle(color: Colors.white),
-            ),
-            MaterialButton(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)),
-              color: Colors.greenAccent,
-              onPressed: () {
-                switch (provider.gettimerStatus) {
-                  case TimerStatus.stopped:
-                    {
-                      provider.setTimerStatus = TimerStatus.started;
-                      break;
+              SizedBox(height: 30),
+              Switch(
+                onChanged: toggleSwitch,
+                value: isSwitched,
+                activeColor: Colors.greenAccent,
+                thumbColor: MaterialStateProperty.resolveWith<Color>(
+                  (Set<MaterialState> states) {
+                    if (states.contains(MaterialState.disabled)) {
+                      return Colors.greenAccent;
                     }
-                  case TimerStatus.playing:
-                    {
-                      provider.setTimerStatus = TimerStatus.paused;
-                      break;
-                    }
-                  case TimerStatus.paused:
-                    {
-                      provider.setTimerStatus = TimerStatus.playing;
-                      break;
-                    }
-                  case TimerStatus.started:
-                    {
-                      break;
-                    }
-                }
-              },
-              child: Container(
-                height: 50,
-                width: double.maxFinite,
-                child: Center(
-                  child: Text(
-                    provider.gettimerStatus == TimerStatus.stopped
-                        ? 'Start'
-                        : provider.gettimerStatus == TimerStatus.playing
-                            ? 'Pause'
-                            : provider.gettimerStatus == TimerStatus.paused
-                                ? 'Resume'
-                                : '',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black54, fontSize: 18),
+                    return Colors.white;
+                  },
+                ),
+              ),
+              Text(
+                text,
+                style: TextStyle(color: Colors.white),
+              ),
+              MaterialButton(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15)),
+                color: Colors.greenAccent,
+                onPressed: () {
+                  switch (provider.gettimerStatus) {
+                    case TimerStatus.stopped:
+                      {
+                        provider.setTimerStatus = TimerStatus.started;
+                        break;
+                      }
+                    case TimerStatus.playing:
+                      {
+                        provider.setTimerStatus = TimerStatus.paused;
+                        break;
+                      }
+                    case TimerStatus.paused:
+                      {
+                        provider.setTimerStatus = TimerStatus.playing;
+                        break;
+                      }
+                    case TimerStatus.started:
+                      {
+                        break;
+                      }
+                    case TimerStatus.completed:
+                      {
+                        provider.setTimerStatus = TimerStatus.stopped;
+                      }
+                  }
+                },
+                child: Container(
+                  height: 50,
+                  width: double.maxFinite,
+                  child: Center(
+                    child: Text(
+                      (provider.gettimerStatus == TimerStatus.stopped ||
+                              provider.gettimerStatus == TimerStatus.completed)
+                          ? 'Start'
+                          : (provider.gettimerStatus == TimerStatus.playing ||
+                                  provider.gettimerStatus ==
+                                      TimerStatus.started)
+                              ? 'Pause'
+                              : provider.gettimerStatus == TimerStatus.paused
+                                  ? 'Resume'
+                                  : '',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.black54, fontSize: 18),
+                    ),
                   ),
                 ),
               ),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            provider.gettimerStatus != TimerStatus.stopped
-                ? MaterialButton(
-                    shape: RoundedRectangleBorder(
-                      side: BorderSide(color: Colors.white),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    color: Colors.transparent,
-                    onPressed: () {},
-                    child: Container(
-                      height: 50,
-                      width: double.maxFinite,
-                      child: Center(
-                        child: Text(
-                          "LET'S STOP I AM FULL NOW",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+              SizedBox(
+                height: 20,
+              ),
+              provider.gettimerStatus != TimerStatus.stopped
+                  ? MaterialButton(
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(color: Colors.white),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      color: Colors.transparent,
+                      onPressed: () {
+                        setState(() {
+                          if (_currIndex >= 0 && _currIndex <= 2) {
+                            _currIndex++;
+                          }
+                        });
+                        provider.setTimerStatus = TimerStatus.stopped;
+                      },
+                      child: Container(
+                        height: 50,
+                        width: double.maxFinite,
+                        child: Center(
+                          child: Text(
+                            "LET'S STOP I AM FULL NOW",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white, fontSize: 18),
+                          ),
                         ),
                       ),
-                    ),
-                  )
-                : Container()
-          ],
+                    )
+                  : Container()
+            ],
+          ),
         ),
       ),
     );

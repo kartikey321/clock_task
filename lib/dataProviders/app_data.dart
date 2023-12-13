@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-enum TimerStatus { stopped, playing, paused, started }
+enum TimerStatus { stopped, playing, paused, started, completed }
 
 enum Soundstatus { on, off }
 

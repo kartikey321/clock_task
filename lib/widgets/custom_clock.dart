@@ -24,6 +24,7 @@ class _MyCircularProgressClockState extends State<MyCircularProgressClock> {
   final player = AudioPlayer();
   int remainingSeconds = 0; // Start from 10 minutes
   bool soundOn = true;
+  bool _completed = false;
   var _status = TimerStatus.stopped;
 
   @override
@@ -49,9 +50,13 @@ class _MyCircularProgressClockState extends State<MyCircularProgressClock> {
           }
           if (remainingSeconds <= 0) {
             await player.stop();
-            stopTimer(); // Stop the timer when remaining time reaches 0
+            stopTimer();
+            setState(() {
+              _completed = true;
+            });
           } else {
-            startTimer(); // Schedule the next iteration only if remaining time > 0
+            Future.delayed(Duration(seconds: 1),
+                startTimer); // Schedule the next iteration only if remaining time > 0
           }
         },
       );
@@ -71,8 +76,10 @@ class _MyCircularProgressClockState extends State<MyCircularProgressClock> {
   }
 
   void resumeTimer() {
-    if (timer!.isPaused) {
-      timer?.start();
+    if (timer != null) {
+      if (timer!.isPaused) {
+        timer?.start();
+      }
     }
   }
 
@@ -85,9 +92,21 @@ class _MyCircularProgressClockState extends State<MyCircularProgressClock> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AppData>(context);
+    if (_completed) {
+      Future.delayed(Duration.zero, () {
+        provider.setTimerStatus = TimerStatus.completed;
+      });
+      remainingSeconds = 0;
+    }
     if (provider.gettimerStatus == TimerStatus.started) {
       if (_status == TimerStatus.stopped) {
+        setState(() {
+          remainingSeconds = widget.remainingTime.inSeconds;
+        });
+        _completed = false;
+
         startTimer();
+
         Future.delayed(Duration.zero, () {
           provider.setTimerStatus = TimerStatus.playing;
         });
@@ -107,10 +126,16 @@ class _MyCircularProgressClockState extends State<MyCircularProgressClock> {
         soundOn = true;
       }
     }
-    final minutes = remainingSeconds ~/ 60;
-    final seconds = remainingSeconds % 60;
-    final progress = (remainingSeconds / widget.remainingTime.inSeconds);
-
+    var minutes = remainingSeconds ~/ 60;
+    var seconds = remainingSeconds % 60;
+    var progress = (remainingSeconds / widget.remainingTime.inSeconds);
+    if (provider.gettimerStatus == TimerStatus.stopped) {
+      minutes = 0;
+      seconds = 0;
+      progress = 0;
+      remainingSeconds = 0;
+      _completed = false;
+    }
     return Container(
       margin: EdgeInsets.all(27),
       padding: EdgeInsets.all(15),
